@@ -1,0 +1,6 @@
+name: redact
+description: "Redact text patterns using overlay boxes."
+inputs:
+  file:     {type: str, required: true}
+  patterns: {type: "List[str]", required: true}  # regex list
+  output:   {type: str, required: false}

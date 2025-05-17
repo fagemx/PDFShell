@@ -1,0 +1,5 @@
+name: merge
+description: Merge multiple PDF files into one
+inputs:
+  files: {type: "List[str]", required: true}
+  output: {type: str, required: true}

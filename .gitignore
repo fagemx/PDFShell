@@ -1,0 +1,77 @@
+# Python
+__pycache__/
+*.py[cod]
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Virtualenv
+.venv/
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# Pytest
+.pytest_cache/
+.coverage
+.tox/
+
+# Django
+*.log
+db.sqlite3
+local_settings.py
+# migrations/ # 通常建議追蹤 migrations，除非有特殊原因
+
+# Nuxt dev/build outputs (from pdfshell-ui/.gitignore)
+.output/
+.data/
+.nuxt/
+.nitro/
+.cache/
+# dist/ # Python's dist/ above should cover this if it's a top-level dist
+
+# Node dependencies (from pdfshell-ui/.gitignore)
+node_modules/
+
+# Logs (from pdfshell-ui/.gitignore)
+# *.log # Covered by Django's *.log
+logs/
+
+# Misc (from pdfshell-ui/.gitignore)
+.DS_Store
+.fleet/
+.idea/
+
+# Local env files (from pdfshell-ui/.gitignore)
+.env
+.env.*
+!.env.example
+
+# Custom ignored folders and files
+Knowledge/
+*.md
+uploads/k1ffil9kjbro5dbncn3l0ytst4o3k81u/
+
+# Docker
+docker-compose.override.yml
+
+# VSCode
+.vscode/ 

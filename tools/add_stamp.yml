@@ -1,0 +1,9 @@
+name: add_stamp
+description: "Insert a PNG/SVG stamp on a specific page."
+inputs:
+  file:        {type: str, required: true}
+  page:        {type: int, required: true}   # -1 = last page
+  stamp_path:  {type: str, required: true}
+  pos:         {type: str, required: false, default: "br"}  # tl/tr/bl/br
+  scale:       {type: float, required: false, default: 1.0}
+  output:      {type: str, required: false}

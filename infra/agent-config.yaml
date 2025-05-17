@@ -1,0 +1,90 @@
+# infra/agent-config.yaml
+# Grafana Agent 配置範例 - 用於收集 Docker 日誌並推送到 Loki
+
+server:
+  http_listen_port: 12345 # Agent 自身的 HTTP 端口，用於健康檢查等
+
+logs:
+  configs:
+    - name: containers
+      clients:
+        - url: http://loki:3100/loki/api/v1/push # 將此處替換為您的 Loki 實例 URL
+          # 如果您的 Loki 需要認證，可以在此處添加 basic_auth, bearer_token 等
+          # basic_auth:
+          #   username: <your-loki-username>
+          #   password: <your-loki-password>
+          # tenant_id: <your-tenant-id> # 如果是多租戶 Loki (如 Grafana Cloud Loki)
+
+      positions:
+        filename: /tmp/positions.yaml # 存儲讀取日誌位置的文件路徑
+
+      scrape_configs:
+        # 從 Docker 容器收集日誌
+        # 需要 Agent 能夠訪問 Docker socket, 或者使用其他日誌收集方式如 journald
+        # 以下是一個使用 Docker API target 的範例 (需 Agent 在可訪問 Docker API 的環境中)
+        # 或者更常見的是使用 promtail 的 docker discovery 或直接讀取日誌文件
+        # 這裡提供一個簡化的 promtail 風格的 Docker service discovery 設定 (概念性)
+        # 實際的 Grafana Agent Docker 日誌收集通常依賴 'integrations' 或特定的 promtail 設定
+
+        # 對於 Docker sidecar 模式，更簡單的方式可能是讓應用程式將日誌輸出到 stdout/stderr
+        # 然後 Grafana Agent (作為另一個容器) 抓取這些 Docker 日誌。
+        # docker-compose.yml 中 grafana-agent 服務的 volume mount (如 /var/lib/docker/containers)
+        # 或使用 Docker logging driver (如 fluentd) 將日誌轉發給 Agent。
+
+        # 以下是一個更通用的 journald 抓取範例 (如果容器日誌寫入 journald)
+        # - job_name: journal_scrape
+        #   journal:
+        #     max_age: 12h
+        #     labels:
+        #       job: systemd-journal
+        #   relabel_configs:
+        #     - source_labels: ['__journal__systemd_unit']
+        #       target_label: 'unit'
+
+        # 假設我們使用 promtail 的方式來抓取 Docker 容器的 stdout/stderr
+        # 這需要 Grafana Agent 以 promtail 模式運行，或者其日誌組件支持類似的發現機制。
+        # Grafana Agent 的 'loki.source.docker' 元件是更現代的方式 (如果使用 River 配置格式)
+        # 對於舊版 promtail YAML 配置，可能類似於：
+        - job_name: docker_stdout
+          docker_sd_configs: # 這是 promtail 的配置，Agent 中可能通過 integrations/promtail wrapper 實現
+            - host: unix:///var/run/docker.sock # 確保 Agent 容器可以訪問 Docker socket
+              refresh_interval: 5s
+          relabel_configs:
+            # 從 Docker 標籤中提取有用的標籤
+            - source_labels: ['__meta_docker_container_name']
+              regex: '/(.*)'
+              target_label: 'container'
+            - source_labels: ['__meta_docker_container_log_stream']
+              target_label: 'stream'
+            # 添加固定的標籤，例如環境
+            - target_label: 'environment'
+              replacement: 'development' # 或從環境變數讀取
+            - target_label: 'job'
+              replacement: 'docker_logs'
+
+# metrics: # (可選) 如果您也想用 Agent 收集指標
+#   wal_directory: /tmp/grafana-agent-wal
+#   global:
+#     scrape_interval: 1m
+#   configs:
+#     - name: agent_metrics
+#       scrape_configs:
+#         - job_name: agent
+#           static_configs:
+#             - targets: ['127.0.0.1:12345'] # Agent 自身的指標端點
+#     # - name: node_exporter_metrics # 假設您有 node_exporter
+#     #   scrape_configs:
+#     #     - job_name: node
+#     #       static_configs:
+#     #         - targets: ['node-exporter:9100']
+
+# integrations: # (可選) 用於更簡單地配置常見的 exporter 或日誌收集
+  # promtail: # 如果想直接使用 promtail 的配置格式
+  #   enabled: true
+  #   config_path: /etc/promtail/config.yml # 指向另一個 promtail 特定配置文件
+  # node_exporter:
+  #   enabled: true
+  #   relabel_configs:
+  #     - source_labels: [__address__]
+  #       target_label: instance
+  #       replacement: 'my-pdfshell-instance' 
