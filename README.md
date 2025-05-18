@@ -19,8 +19,8 @@ poetry run python -m pdfshell.shell.app
 進入後可輸入以下常用指令（像操作 Linux 一樣）：
 
 ```shell
-# 合併 PDF
-merge --files sample1.pdf sample2.pdf --output merged.pdf
+# 合併 PDF (若要合併多個檔案，需重複 --files 選項)
+merge --files sample1.pdf --files sample2.pdf --output merged.pdf
 
 # 分割指定頁數，並指定輸出資料夾
 split --file merged.pdf --pages "1,3" --output_dir out/
