@@ -49,8 +49,12 @@ ___
 啟動後端與前端：
 
 ```shell
+#第一次運行，建立鏡像
 docker compose up --build -d
-pnpm dev          # 啟動 Nuxt 開發伺服器，預設 http://localhost:3000
+#後台運行
+docker compose up -d
+# 啟動 Nuxt 開發伺服器，預設 http://localhost:3000
+pnpm dev          
 ```
 
 開啟瀏覽器：
