@@ -23,9 +23,8 @@ PDF_UPLOADS_ROOT = BASE_DIR / "uploads"
 DEFAULT_SHARED_FILES = [
     "sample1.pdf",
     "sample2.pdf",
-    "sample3.pdf",
-    "sample4.pdf",
-    "stamp.png", # Assuming stamp.png is also a default shared file in files/
+    "stamp1.png", # Assuming stamp.png is also a default shared file in files/
+    "stamp2.png",
 ]
 
 # Quick-start development settings - unsuitable for production
@@ -50,7 +49,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'coreapi.apps.CoreapiConfig',
-    'trace.apps.TraceConfig',
+    'apptrace.apps.TraceConfig',
 ]
 
 MIDDLEWARE = [
@@ -87,12 +86,35 @@ WSGI_APPLICATION = 'pdfshell_srv.wsgi.application'
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
 # Default to SQLite if DATABASE_URL is not set (e.g., for local non-Docker testing)
-SQLITE_DEFAULT_URL = 'sqlite:///' + str(BASE_DIR / 'db.sqlite3')
-DATABASE_URL = os.getenv('DATABASE_URL', SQLITE_DEFAULT_URL)
+# SQLITE_DEFAULT_URL = 'sqlite:///' + str(BASE_DIR / 'db.sqlite3')
+# DATABASE_URL = os.getenv('DATABASE_URL', SQLITE_DEFAULT_URL) # 暫時註解
+
+# # 根據環境變數決定 DB host，預設為 'db' (用於 Docker 內部)
+# # 在本地執行 manage.py 時，可以設定 DB_HOST=localhost
+# DB_HOST = os.getenv('DB_HOST', 'db') # 註解掉
 
 DATABASES = {
-    'default': dj_database_url.parse(DATABASE_URL, conn_max_age=600)
+    # 'default': dj_database_url.parse(DATABASE_URL, conn_max_age=600) # 暫時註解
+    'default': {
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': 'pdfshell_db',     # 直接使用 .env 中的值
+        'USER': 'pdfshell_user',    # 直接使用 .env 中的值
+        'PASSWORD': 'pdfshell_pass', # 直接使用 .env 中的值
+        'HOST': 'localhost',       # 直接使用 .env 中的值 (POSTGRES_HOST 的預期值)
+        'PORT': '5432',            # 直接使用 .env 中的值
+        'OPTIONS': {
+            'client_encoding': 'UTF8', # 明確指定客戶端編碼
+        },
+    }
 }
+
+# DEBUGGING: Print effective database connection parameters
+db_settings_effective = DATABASES['default']
+print(f"DEBUG_SETTINGS PY: HOST: {db_settings_effective['HOST']}")
+print(f"DEBUG_SETTINGS PY: NAME: {db_settings_effective['NAME']}")
+print(f"DEBUG_SETTINGS PY: USER: {db_settings_effective['USER']}")
+print(f"DEBUG_SETTINGS PY: PASSWORD: {db_settings_effective['PASSWORD']}")
+print(f"DEBUG_SETTINGS PY: PORT: {db_settings_effective['PORT']}")
 
 
 # Password validation

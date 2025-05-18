@@ -7,7 +7,8 @@ from pypdf import PdfReader, PdfWriter
 
 def _parse_ranges(rng: str, total_pages: int) -> Set[int]:
     """
-    解析頁碼範圍字串 (例如 "1-3,5,!7") 回傳一個包含指定頁碼的集合 (1-based)。
+    解析頁碼範圍字串 (例如 "1-3,5,!7,-1", "1--1") 回傳一個包含指定頁碼的集合 (1-based)。
+    "-1" 代表最後一頁。
     """
     selected_pages = set()
     if not rng.strip():
@@ -15,53 +16,133 @@ def _parse_ranges(rng: str, total_pages: int) -> Set[int]:
 
     tokens = rng.split(',')
     temp_included_pages = set()
-    for token in tokens:
-        token = token.strip()
-        if not token.startswith('!'):
-            if '-' in token:
-                try:
-                    start, end = map(int, token.split('-'))
-                    if start <= 0 or end <= 0 or start > end:
-                        raise ValueError(f"無效的頁碼範圍: {token}")
-                    temp_included_pages.update(range(start, end + 1))
-                except ValueError:
-                    raise ValueError(f"頁碼範圍格式錯誤: {token}")
-            else:
-                try:
-                    page_num = int(token)
-                    if page_num <= 0:
-                        raise ValueError(f"無效的頁碼: {token}")
-                    temp_included_pages.add(page_num)
-                except ValueError:
-                    raise ValueError(f"頁碼格式錯誤: {token}")
     
-    if not temp_included_pages and any(t.startswith("!") for t in tokens):
+    for token_idx, raw_token in enumerate(tokens):
+        token = raw_token.strip()
+        is_exclusion = token.startswith('!')
+        effective_token = token[1:] if is_exclusion else token
+
+        if not effective_token: # 例如 "!" 或 "," 後面直接接 ","
+            raise ValueError(f"無效的 token 格式: '{raw_token}'")
+
+        if '-' in effective_token:
+            parts = effective_token.split('-')
+            if len(parts) != 2:
+                raise ValueError(f"頁碼範圍格式錯誤 (無效的 '-' 使用): {effective_token}")
+            
+            start_str, end_str = parts[0].strip(), parts[1].strip()
+
+            try:
+                if start_str == "-1":
+                    start = total_pages
+                else:
+                    start = int(start_str)
+                
+                if end_str == "-1":
+                    end = total_pages
+                else:
+                    end = int(end_str)
+
+                if start <= 0 and start_str != "-1": # 允許 start 是 -1 (total_pages)
+                     raise ValueError(f"起始頁碼必須大於 0 或為 -1: {start_str}")
+                if end <= 0 and end_str != "-1": # 允許 end 是 -1 (total_pages)
+                    raise ValueError(f"結束頁碼必須大於 0 或為 -1: {end_str}")
+                
+                # 處理 start > total_pages (如果 start 不是由 "-1" 轉換而來)
+                if start > total_pages and start_str != "-1":
+                    raise ValueError(f"起始頁碼 {start} 超出總頁數 {total_pages}")
+                # 處理 end > total_pages (如果 end 不是由 "-1" 轉換而來)
+                if end > total_pages and end_str != "-1":
+                     raise ValueError(f"結束頁碼 {end} 超出總頁數 {total_pages}")
+
+                if start > end: # 轉換後的 start 和 end 比較
+                    raise ValueError(f"無效的頁碼範圍 (起始頁碼 {start} 大於結束頁碼 {end}): {effective_token}")
+                
+                current_range_pages = set(range(start, end + 1))
+                if is_exclusion:
+                    # 如果是排除，並且 temp_included_pages 為空（即前面沒有包含規則，或這是第一個規則）
+                    # 則我們需要先假設所有頁面都被選中，然後從中排除。
+                    # 這個邏輯會在後面統一處理，這裡我們先收集所有要排除的頁面。
+                    pass # 稍後處理排除
+                else:
+                    temp_included_pages.update(current_range_pages)
+
+            except ValueError as e: # 捕捉 int() 轉換錯誤或我們自己拋出的 ValueError
+                # 避免重複包裝 ValueError
+                if "頁碼" in str(e) or "page" in str(e).lower(): # 檢查是否是我們自訂的錯誤
+                     raise
+                raise ValueError(f"頁碼範圍格式錯誤: {effective_token} -> {e}")
+        else: # 單個頁碼
+            try:
+                page_num_str = effective_token
+                if page_num_str == "-1":
+                    page_num = total_pages
+                else:
+                    page_num = int(page_num_str)
+
+                if page_num <= 0 and page_num_str != "-1":
+                     raise ValueError(f"頁碼必須大於 0 或為 -1: {page_num_str}")
+                
+                if page_num > total_pages and page_num_str != "-1":
+                    raise ValueError(f"頁碼 {page_num} 超出總頁數 {total_pages}")
+
+                if is_exclusion:
+                    pass # 稍後處理排除
+                else:
+                    temp_included_pages.add(page_num)
+            except ValueError as e:
+                if "頁碼" in str(e) or "page" in str(e).lower():
+                    raise
+                raise ValueError(f"頁碼格式錯誤: {effective_token} -> {e}")
+
+    # 決定基礎選擇集 (如果沒有明確包含，且有排除，則全選)
+    if not temp_included_pages and any(t.strip().startswith("!") for t in tokens):
         selected_pages.update(range(1, total_pages + 1))
     else:
         selected_pages.update(temp_included_pages)
 
-    for token in tokens:
-        token = token.strip()
+    # 現在處理排除
+    for raw_token in tokens:
+        token = raw_token.strip()
         if token.startswith('!'):
-            token_val = token[1:]
-            if '-' in token_val:
-                try:
-                    start, end = map(int, token_val.split('-'))
-                    if start <= 0 or end <= 0 or start > end:
-                        raise ValueError(f"無效的排除頁碼範圍: {token_val}")
-                    selected_pages.difference_update(range(start, end + 1))
-                except ValueError:
-                    raise ValueError(f"排除頁碼範圍格式錯誤: {token_val}")
-            else:
-                try:
-                    page_num = int(token_val)
-                    if page_num <= 0:
-                        raise ValueError(f"無效的排除頁碼: {token_val}")
-                    selected_pages.discard(page_num)
-                except ValueError:
-                    raise ValueError(f"排除頁碼格式錯誤: {token_val}")
+            effective_token = token[1:]
+            if not effective_token: continue # 跳過空的排除，例如 "!,1"
+
+            if '-' in effective_token:
+                parts = effective_token.split('-')
+                # 這裡的錯誤檢查已在上面包含部分做過，但為了安全可以再次檢查或簡化
+                # 假設格式在此階段是正確的，因為上面已經檢查過了
+                start_str, end_str = parts[0].strip(), parts[1].strip()
+                
+                start = total_pages if start_str == "-1" else int(start_str)
+                end = total_pages if end_str == "-1" else int(end_str)
+                
+                # 確保 start 和 end 在合理範圍內，並且 start <= end
+                # 這裡的檢查主要是針對轉換後的 start/end
+                if start <= 0 and start_str != "-1": continue # 或拋出錯誤
+                if end <= 0 and end_str != "-1": continue # 或拋出錯誤
+                if start > total_pages and start_str != "-1": continue
+                if end > total_pages and end_str != "-1": continue
+                if start > end: continue
+
+                selected_pages.difference_update(range(start, end + 1))
+            else: # 單個排除頁碼
+                page_num_str = effective_token
+                page_num = total_pages if page_num_str == "-1" else int(page_num_str)
+
+                if page_num <= 0 and page_num_str != "-1": continue
+                if page_num > total_pages and page_num_str != "-1": continue
+                
+                selected_pages.discard(page_num)
                     
+    # 最後再次確認所有選中的頁碼都在 1 到 total_pages 之間
+    # 這一行實際上可能不需要了，因為我們在解析時已經做了邊界檢查
+    # 但保留它作為最後的防線是安全的
     final_pages = {p for p in selected_pages if 1 <= p <= total_pages}
+    if not final_pages and rng.strip(): # 如果原始範圍非空但結果為空
+        # 這種情況可能發生在例如 total_pages=5, rng="6-10" 或 rng="!1-5"
+        pass # 允許返回空集合，run 函數會檢查這個
+
     return final_pages
 
 class SplitSchema(BaseModel):
@@ -76,25 +157,12 @@ def run(args: dict) -> str:
     """
     input_file_path_str: str = args['file']
     pages_str: str = args['pages']
-    # output_dir_str is a full path to a directory, validated and created by the engine.
-    # The default value for output_dir in YAML is ".", engine resolves this.
-    output_dir_str: str = args.get('output_dir') 
-
-    if not output_dir_str:
-        # This case should ideally be handled by the engine providing a default output path
-        # or the tool yml having a more specific default that engine can resolve.
-        # For now, if engine passes it as None/empty due to yml default '.', raise error or use input file's dir.
-        # Let's assume engine guarantees output_dir is a valid dir path if the key was in original_args.
-        # If 'output_dir' was NOT in original_args, then the tool should define a default name for 'output'
-        # and the engine would prepare that. For split, the output is implicitly named.
-        # This highlights a need for clarity on how output_dir for split interacts with engine logic.
-        # For now, if engine provides it, we use it. If not, it's an issue.
-        # The current engine logic for OUTPUT_PATH_KEYS['output_dir'] will ensure it's a valid full path to a directory.
-        raise ValueError("output_dir must be provided by the calling engine after path processing.")
+    output_dir_str: str = args['output_dir'] # 'output_dir' is now always a full path from engine
 
     try:
         input_file_path_obj = Path(input_file_path_str)
-        output_dir_obj = Path(output_dir_str)
+        output_dir_obj = Path(output_dir_str) # This is now always a valid, absolute directory path
+        # Engine ensures output_dir_obj exists.
 
         reader = PdfReader(input_file_path_str)
         total_pages = len(reader.pages)
@@ -167,3 +235,7 @@ class SplitTool(BaseTool):
                  # If yml default is '.', engine should resolve it to a concrete dir path.
 
         return run(args_dict)
+
+split = SplitTool()
+
+ArgsSchema = SplitSchema # Added to expose the schema with the expected name for core.engine

@@ -18,28 +18,21 @@ class AddStampSchema(BaseModel):
 
 def run(args: dict) -> str:
     """Adds an image stamp to a specified page of a PDF file.
-    Assumes 'file', 'stamp_path', and 'output' (if provided) in args are full, validated, absolute paths.
+    Assumes 'file', 'stamp_path', and 'output' in args are full, validated, absolute paths.
     """
     input_file_str: str = args['file']
     stamp_image_str: str = args['stamp_path']
     page_num: int = args['page']
     position: str = args.get('pos', "br")
     scale_factor: float = args.get('scale', 1.0)
-    output_file_str: Optional[str] = args.get('output')
+    output_final_path_str: str = args['output'] # 'output' is now always a full path from engine
 
     try:
-        input_file_path = Path(input_file_str)
+        # input_file_path = Path(input_file_str) # No longer needed to construct output path
         stamp_image_path = Path(stamp_image_str)
+        output_final_path = Path(output_final_path_str)
 
-        if output_file_str:
-            output_final_path = Path(output_file_str)
-        else:
-            # If output is not provided by engine, create it in the same dir as input
-            output_final_path = input_file_path.with_stem(input_file_path.stem + "_stamped").with_suffix(".pdf")
-        
-        # Engine should have created the parent directory for output_final_path if it was in args.
-        # If output was None and we just constructed output_final_path, we rely on input_file_path.parent existing.
-        # This is generally safe as input_file_path is validated.
+        # Engine ensures parent directory for output_final_path exists.
 
         reader = PdfReader(input_file_str)
         if not reader.pages:
@@ -166,3 +159,7 @@ class AddStampTool(BaseTool):
 # If this file were to be loaded by a loader that expects a single 'tool' instance:
 # tool = AddStampTool()
 # However, with create_structured_chat_agent, we'll import the class and instantiate it in agent.py
+
+add_stamp = AddStampTool()
+
+ArgsSchema = AddStampSchema # Added to expose the schema with the expected name for core.engine

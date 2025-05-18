@@ -17,11 +17,10 @@ packages = [
 
 [tool.poetry.dependencies]
 python = "^3.12"
-click = "^8.1.7"
+click = "8.1.7"
 pypdf = "^4.2.0"
 PyYAML = "^6.0.1"
 requests = "^2.31.0"
-django = "^5.0.6"
 djangorestframework = "^3.15.1"
 pydantic = "2.11.3"
 gunicorn = "^21.2.0"
@@ -30,13 +29,15 @@ langchain-core = "0.3.55"
 langchain-openai = "^0.2.0"
 openai = ">=1.26.0,<2.0.0"
 reportlab = "^4.1.0"
-psycopg2-binary = "^2.9.9"
+psycopg = {extras = ["binary"], version = "^3.1.18"}
 dj-database-url = "^2.0.0"
 Pillow = "^10.0.0"
 python-dotenv = "^1.0.1"
-click-shell = "^2.1"
 rich = "^13"
 langgraph = "^0.4.5"
+docling = "^2.32.0"
+django = "^5.2.1"
+click-shell = "2.1"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.0.0"
@@ -47,7 +48,7 @@ Pillow = "^10.0.0"
 pytest-django = "^4.8.0"
 
 [tool.poetry.extras]
-api = ["django", "djangorestframework", "pydantic", "gunicorn", "PyYAML", "psycopg2-binary", "dj-database-url"]
+api = ["django", "djangorestframework", "pydantic", "gunicorn", "PyYAML", "psycopg", "dj-database-url"]
 pdf = ["reportlab", "Pillow"]
 
 [build-system]

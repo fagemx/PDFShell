@@ -2,10 +2,12 @@ import importlib
 import yaml
 import logging
 from pathlib import Path # Added Path
+from typing import get_args # Added import for get_args
 from .secure import validate, hash_file
 # from .alert import notify_slack # Commented out for now
-from trace.models import Operation # Import the Operation model
+from apptrace.models import Operation # Import the Operation model
 from django.conf import settings # Import settings to access PDF_FILES_ROOT, PDF_UPLOADS_ROOT
+from pydantic import ValidationError
 
 # Placeholder for log_trace, will be implemented later with Trace model
 # from trace.models import Operation # This will be used when trace is set up
@@ -202,9 +204,31 @@ def run_tool(tool_name: str, original_args: dict, session_id: str | None = None)
 
         # Process output paths (before tool execution, to validate target location)
         for key in OUTPUT_PATH_KEYS:
-            if key in args:
-                # base_path_for_cli is only used if session_id is None
-                args[key] = process_path_arg(args[key], settings.PDF_FILES_ROOT, session_id, is_input=False, arg_key=key)
+            user_provided_value = args.get(key)
+            default_output_root = settings.BASE_DIR / "output"
+            default_output_root.mkdir(parents=True, exist_ok=True)
+
+            if user_provided_value is None:
+                # User did not provide the output path/dir, generate a default one in PROJECT_ROOT/output/
+                input_file_for_default_name = args.get('file') or (args.get('files')[0] if isinstance(args.get('files'), list) and args.get('files') else "default")
+                stem = Path(input_file_for_default_name).stem
+
+                if key == 'output':
+                    if tool_name == "merge": default_filename = f"{stem}_merged.pdf"
+                    elif tool_name == "add_stamp": default_filename = f"{stem}_stamped.pdf"
+                    elif tool_name == "redact": default_filename = f"{stem}_redacted.md"
+                    else: default_filename = f"{stem}_output.pdf" # Fallback default
+                    args[key] = str(default_output_root / default_filename)
+                elif key == 'output_dir': # For tools like split
+                    args[key] = str(default_output_root) 
+            else:
+                # User provided an output path/dir. Process it relative to PDF_FILES_ROOT (files/)
+                # process_path_arg ensures the path is validated and made absolute (within files/ or user-provided absolute)
+                args[key] = process_path_arg(user_provided_value, settings.PDF_FILES_ROOT, session_id, is_input=False, arg_key=key)
+        
+        # Ensure all paths in args (now potentially modified) are absolute and validated before Pydantic
+        # The Pydantic models themselves expect strings, not Path objects, as per current tool schemas.
+        # process_path_arg returns strings.
 
         in_hash_map = {}
         if processed_input_paths_for_hash:
@@ -220,8 +244,21 @@ def run_tool(tool_name: str, original_args: dict, session_id: str | None = None)
         tool_module = importlib.import_module(f"tools.{tool_name}")
         logging.info(f"Executing tool: {tool_name} with processed args: {args} (Session: {session_id})")
         
-        # Tool's run function should now use the full, validated paths from args
-        tool_output = tool_module.run(args) # args now contains full paths
+        # Validate with Pydantic model instance
+        try:
+            # Args passed to Pydantic model should already have paths processed by the first pass
+            tool_args_model = tool_module.ArgsSchema(**args)
+            # The model dump now contains the validated and potentially type-coerced arguments
+            processed_final_args = tool_args_model.model_dump()
+
+            tool_output = tool_module.run(processed_final_args) # Pass the validated args to the tool's run function
+
+        except ValidationError as e:
+            error_message = f"Error in run_tool ({tool_name}, Session: {session_id}): Validation error - {e}"
+            logging.error(error_message)
+            # notify_slack(f"❌ PDFShell Engine Error: {error_message}")
+            log_trace(tool_name, original_args, primary_in_hash, None, status="error", error_message=str(e))
+            raise
 
         output_path_to_hash = None
         if tool_output and isinstance(tool_output, str): # Assuming tool returns a single output file path

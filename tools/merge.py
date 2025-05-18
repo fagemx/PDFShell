@@ -74,3 +74,7 @@ class MergeTool(BaseTool):
         
         # Simplified: assuming the standalone run function is the primary logic
         return run({"files": files, "output": output})
+
+merge = MergeTool()
+
+ArgsSchema = MergeSchema # Added to expose the schema with the expected name for core.engine

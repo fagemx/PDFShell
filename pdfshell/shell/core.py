@@ -80,7 +80,7 @@ except RuntimeError as e: # Could be "Django settings already configured."
     print(f"Django setup in shell/core.py warning/error: {e}")
 # --- End Django Setup ---
 
-from trace.models import Operation
+from apptrace.models import Operation
 
 def fetch_history(limit: int = 10):
     """
@@ -105,6 +105,6 @@ def fetch_history(limit: int = 10):
 Day 7 變更:
 - 移除了 _parse, list_commands, 和 execute 函數，因為 shell/app.py 將使用 make_click_shell
   直接整合 cli/main.py 中的 Click 命令。
-- 添加了 fetch_history 函數，用於從 trace.models.Operation 查詢操作歷史。
+- 添加了 fetch_history 函數，用於從 apptrace.models.Operation 查詢操作歷史。
 - Django 初始化代碼保留（或調整），以確保在 fetch_history 中可以訪問 ORM。
 """ 
