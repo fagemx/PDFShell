@@ -38,7 +38,9 @@ history --limit 5
 exit
 ```
 
-📘 **查看完整指令說明：[命令範例](https://github.com/fagemx/PDFShell/blob/main/COMMAND_REFERENCE.md)** 📎 附註：未指定輸出時，預設輸出至 `output/` 資料夾。
+📘 **查看完整指令說明：[命令範例](https://github.com/fagemx/PDFShell/blob/main/COMMAND_REFERENCE.md)** 
+- 📎 附註：本系統依賴 OpenAI 進行文件內容解析與對話生成，未提供此金鑰將導致 AI 功能無法啟用。
+- 未指定輸出時，預設輸出至 `output/` 資料夾。
 
 ___
 
