@@ -55,7 +55,7 @@ docker compose up --build -d
 -   Django + 前端整合： [http://localhost:8000](http://localhost:8000/)
 -   Nuxt 開發伺服器： [http://localhost:3000](http://localhost:3000/) （需另啟）
   
-[![Watch the demo](https://resv2.craft.do/user/full/b576b3bb-0dc4-6e02-a1c4-3fa5fb9e3938/doc/9b634094-24ea-4856-85a5-ca13a011dd1a/498c3f28-e36d-4e2f-b7fd-70d9c2e58aac)
+[[![Watch the demo](https://resv2.craft.do/user/full/b576b3bb-0dc4-6e02-a1c4-3fa5fb9e3938/doc/9b634094-24ea-4856-85a5-ca13a011dd1a/498c3f28-e36d-4e2f-b7fd-70d9c2e58aac)](https://resv2.craft.do/user/full/b576b3bb-0dc4-6e02-a1c4-3fa5fb9e3938/doc/9b634094-24ea-4856-85a5-ca13a011dd1a/498c3f28-e36d-4e2f-b7fd-70d9c2e58aac)
 
 #### 🧪 操作範例對話：
 
