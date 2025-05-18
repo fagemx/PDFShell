@@ -113,11 +113,21 @@ ___
 
 ## 🌐 前端啟動（Nuxt + pnpm）
 
-```shell
+前端使用 [Nuxt 3](https://nuxt.com) 框架搭配 `pnpm` 作為套件管理工具。請先安裝 [pnpm](https://pnpm.io/installation)，再依以下步驟啟動前端開發伺服器：
+
+```bash
 cd pdfshell-ui
-pnpm install
-pnpm dev
+pnpm install      # 安裝前端依賴
+pnpm dev          # 啟動 Nuxt 開發伺服器，預設 http://localhost:3000
 ```
+
+* 📎 如果你尚未安裝 `pnpm`，可使用下列指令：
+
+```bash
+npm install -g pnpm
+```
+
+* 前端提供與 LLM 對話式的 UI 操作介面，需搭配後端 API 一起啟動才能完整體驗。
 
 ___
 
@@ -164,3 +174,6 @@ ___
 ___
 
 ##  **讓人人都能用自然語言，操作複雜 PDF 任務。**
+
+
+
