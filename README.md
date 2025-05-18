@@ -31,6 +31,9 @@ split --file merged.pdf --pages "1,3"
 # 加印章（印在第1頁左上）
 add_stamp --file sample1.pdf --stamp_path logo.png --page 1
 
+# 遮蔽內容，例如遮住文字"Henry"
+redact --file sample1.pdf --patterns "Henry"
+
 # 查詢操作紀錄
 history --limit 5
 
