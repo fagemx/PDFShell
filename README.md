@@ -42,8 +42,7 @@ exit
 ```
 
 📘 **查看完整指令說明：[命令範例](https://github.com/fagemx/PDFShell/blob/main/COMMAND_REFERENCE.md)** 
-- 📎 附註：本系統依賴 OpenAI 進行文件內容解析與對話生成，未提供此金鑰將導致 AI 功能無法啟用。
-- 未指定輸出時，預設輸出至 `output/` 資料夾。
+- 📎 附註：未指定輸出時，預設輸出至 `output/` 資料夾。
 
 ___
 
@@ -86,6 +85,7 @@ AI：已擷取完成，新檔案為 final_pages_2_to_5.pdf。
 你：謝啦！
 AI：不客氣！有需要再找我幫忙喔。
 ```
+- 📎 附註：本系統依賴 OpenAI 進行文件內容解析與對話生成，未提供此金鑰將導致 AI 功能無法啟用。
 
 ___
 
