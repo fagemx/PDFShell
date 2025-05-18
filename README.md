@@ -50,6 +50,7 @@ ___
 
 ```shell
 docker compose up --build -d
+pnpm dev          # 啟動 Nuxt 開發伺服器，預設 http://localhost:3000
 ```
 
 開啟瀏覽器：
